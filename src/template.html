@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#e6e0d1">
+<title>Urna</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icones/icone-192.png">
+<link rel="apple-touch-icon" href="icones/icone-192.png">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #e6e0d1; font-family: Arial, Helvetica, sans-serif; touch-action: manipulation; }
+
+  /* palco 1600 de largura, escalado pra caber na tela; o conteúdo (1600x780) fica centralizado na altura */
+  #palco { position: absolute; left: 0; top: 0; width: 1600px; height: 780px; transform-origin: 0 0;
+    background: linear-gradient(180deg, #ece7da 0%, #e6e0d1 60%, #ddd6c5 100%); overflow: hidden; }
+  #conteudo { position: absolute; left: 0; top: 0; width: 1600px; height: 780px; }
+  .borda-dir { position: absolute; right: 0; top: 0; width: 18px; height: 100%; background: linear-gradient(90deg, #d8d1bf, #b9b19d 60%, #6b5a4a); }
+  .borda-topo { position: absolute; left: 0; top: 0; width: 100%; height: 10px; background: linear-gradient(180deg, #d9d2c0, #ece7da); }
+
+  /* ---------- TELA ---------- */
+  .tela { position: absolute; left: 45px; top: 88px; width: 935px; height: 600px; overflow: hidden; color: #2a2a2a;
+    background: linear-gradient(90deg, #e9eaea 0%, #dfe0e1 25%, #cfd0d2 55%, #c3c4c7 75%, #b3b3b9 100%);
+    border: 1px solid #a9a9a9; box-shadow: inset 2px 2px 3px rgba(0,0,0,.15), 0 0 0 2px #d9d3c4; }
+  .t-topo { position: absolute; left: 14px; top: 16px; font-size: 25px; letter-spacing: 1.5px; }
+  .t-cargo { position: absolute; left: 227px; top: 70px; font-size: 41px; letter-spacing: 2.5px; }
+  .t-num-rot { position: absolute; left: 4px; top: 208px; font-size: 27px; }
+  .digitos { position: absolute; left: 180px; top: 160px; display: flex; gap: 4px; }
+  .dig { width: 53px; height: 74px; border: 1.5px solid #3a3a3a; display: flex; align-items: center; justify-content: center; font-size: 60px; color: #222; }
+  .dig.pisca { animation: pisca 1s steps(1) infinite; }
+  @keyframes pisca { 50% { background: #3a3a3a; } }
+  .glitch { animation: glitch .1s steps(2) 6; }
+  @keyframes glitch { 50% { transform: translate(3px, -1px); color: #b00; } }
+
+  .t-info { position: absolute; left: 4px; top: 285px; font-size: 27px; line-height: 50px; }
+  .t-info b { font-weight: normal; letter-spacing: .5px; }
+
+  .t-foto { position: absolute; right: 40px; width: 160px; text-align: center; font-size: 18px; }
+  .t-foto img { display: block; width: 160px; height: 205px; object-fit: cover; object-position: center top; border: 1px solid #777; margin-bottom: 4px; }
+  .t-foto.pres { top: 16px; }
+  .t-foto.vice { top: 262px; width: 170px; right: 35px; }
+  .t-foto.vice img { width: 124px; height: 152px; margin: 0 auto 4px; }
+
+  .t-rodape { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; border-top: 1.5px solid #3a3a3a; padding: 12px 14px; font-size: 22px; line-height: 31px; }
+  .t-rodape span { display: inline-block; width: 185px; padding-left: 42px; }
+
+  .oculto { visibility: hidden; }
+  .some { display: none !important; }
+
+  .t-fim { position: absolute; inset: 0; background: inherit; }
+  .t-fim h1 { position: absolute; left: 0; right: 0; top: 110px; text-align: center; font-size: 300px; font-weight: normal; letter-spacing: 20px; color: #333; }
+  .t-fim p { position: absolute; right: 30px; bottom: 22px; font-size: 26px; color: #777; letter-spacing: 2px; }
+
+  /* ---------- PAINEL DIREITO ---------- */
+  .placa { position: absolute; left: 1033px; top: 16px; width: 497px; height: 140px; border: 1px solid #b8b2a3;
+    background: linear-gradient(180deg, #faf9f6 0%, #efede8 70%, #e2ded5 100%); }
+  .brasao { position: absolute; left: 14px; top: 6px; width: 122px; height: 128px; }
+  .je { position: absolute; right: 30px; top: 18px; text-align: right; font-weight: bold; font-size: 45px; line-height: 52px; color: #1a1a1a; letter-spacing: .5px; }
+
+  .teclado { position: absolute; left: 1033px; top: 156px; width: 497px; height: 572px;
+    background: radial-gradient(ellipse at 50% 40%, #4a4442 0%, #3b3634 55%, #322e2c 100%); border: 1px solid #2a2523; }
+
+  .tecla { position: absolute; padding: 0; width: 88px; height: 66px; border: none; border-radius: 7px; cursor: pointer;
+    background: linear-gradient(180deg, #2e2b2b 0%, #232020 55%, #1a1818 100%);
+    box-shadow: 0 5px 0 #121010, 0 7px 6px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08); }
+  .tecla .n { position: absolute; left: 11px; top: 6px; font-size: 42px; color: #f2f2f2; font-family: Arial, Helvetica, sans-serif; }
+  .tecla .br { position: absolute; right: 12px; top: 13px; display: grid; grid-template-columns: 7px 7px; grid-auto-rows: 7px; gap: 4px 6px; }
+  .tecla .br i { width: 5px; height: 5px; border-radius: 50%; background: #2a2727; }
+  .tecla .br i.on { background: radial-gradient(circle at 35% 35%, #6c6767, #2f2c2c); }
+  .tecla:active, .tecla.ativa, .acao:active, .acao.ativa { transform: translateY(4px); }
+  .tecla:active, .tecla.ativa { box-shadow: 0 1px 0 #121010, 0 2px 3px rgba(0,0,0,.45); }
+
+  .acao { position: absolute; padding: 0; white-space: nowrap; overflow: visible; border: none; border-radius: 6px; cursor: pointer; font-family: Arial, Helvetica, sans-serif; }
+  .acao .rot { display: inline-block; transform: scaleX(.8); font-size: 29px; margin: 0 -20px; }
+  .acao .br2 { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; }
+  .acao .br2 i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; margin: 0 2px; background: rgba(0,0,0,.12); }
+  .branco { left: 32px; top: 437px; width: 122px; height: 72px; color: #555;
+    background: linear-gradient(180deg, #ffffff 0%, #f1f0ec 60%, #dcdad3 100%); box-shadow: 0 5px 0 #a9a69d, 0 7px 6px rgba(0,0,0,.4); }
+  .corrige { left: 182px; top: 437px; width: 122px; height: 72px; color: #3a1a00;
+    background: linear-gradient(180deg, #ff9a3c 0%, #f47a1a 55%, #dd6a10 100%); box-shadow: 0 5px 0 #9c4a08, 0 7px 6px rgba(0,0,0,.4); }
+  .confirma { left: 333px; top: 420px; width: 126px; height: 89px; color: #0b3d1c;
+    background: linear-gradient(180deg, #33d07a 0%, #1fb862 50%, #149a4f 100%); box-shadow: 0 6px 0 #0c6a35, 0 8px 7px rgba(0,0,0,.4); }
+  .confirma .rot { position: relative; top: -10px; }
+  .acao:active, .acao.ativa { box-shadow: 0 1px 0 rgba(0,0,0,.4) !important; }
+
+  /* respiros embaixo */
+  .vent { position: absolute; bottom: 0; width: 13px; height: 46px; background: linear-gradient(180deg, #3b3836, #555); border-radius: 2px 2px 0 0; }
+
+  #arquivo { display: none; }
+</style>
+</head>
+<body>
+<div id="palco">
+  <div class="borda-topo"></div>
+  <div class="borda-dir"></div>
+  <div id="conteudo">
+
+  <div class="tela" id="tela">
+    <div class="t-topo">SEU VOTO PARA</div>
+    <div class="t-cargo">Presidente</div>
+    <div class="t-num-rot">Número:</div>
+    <div class="digitos"><div class="dig pisca" id="d0"></div><div class="dig" id="d1"></div></div>
+
+    <div class="t-info oculto" id="info">
+      <div>Nome: <b>LUIZ INÁCIO LULA DA SILVA</b></div>
+      <div>Partido: <b>PT</b></div>
+      <div>Vice-Presidente: <b>GERALDO ALCKMIN</b></div>
+    </div>
+
+    <div class="t-foto pres oculto" id="fotoPres"><img id="imgLula" src="__LULA__">Presidente</div>
+    <div class="t-foto vice oculto" id="fotoVice"><img id="imgVice" src="__VICE__">Vice-Presidente</div>
+
+    <div class="t-rodape oculto" id="rodape">
+      Aperte a tecla:<br>
+      <span>CONFIRMA</span>para CONFIRMAR este voto<br>
+      <span>CORRIGE</span>para REINICIAR este voto
+    </div>
+
+    <div class="t-fim some" id="fim"><h1>FIM</h1><p>VOTOU</p></div>
+  </div>
+
+  <div class="placa">
+    <svg class="brasao" viewBox="0 0 120 126" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" stroke="#333" stroke-width="1.4">
+        <!-- ramos -->
+        <path d="M30 100 C10 85 8 55 22 32" stroke-width="2.2"/>
+        <path d="M90 100 C110 85 112 55 98 32" stroke-width="2.2"/>
+      </g>
+      <g fill="#444">
+        <ellipse cx="17" cy="50" rx="3" ry="7" transform="rotate(-25 17 50)"/><ellipse cx="13" cy="64" rx="3" ry="7" transform="rotate(-10 13 64)"/>
+        <ellipse cx="15" cy="78" rx="3" ry="7" transform="rotate(15 15 78)"/><ellipse cx="22" cy="91" rx="3" ry="7" transform="rotate(35 22 91)"/>
+        <ellipse cx="25" cy="40" rx="2.5" ry="6" transform="rotate(30 25 40)"/><ellipse cx="23" cy="57" rx="2.5" ry="6" transform="rotate(25 23 57)"/>
+        <ellipse cx="103" cy="50" rx="3" ry="7" transform="rotate(25 103 50)"/><ellipse cx="107" cy="64" rx="3" ry="7" transform="rotate(10 107 64)"/>
+        <ellipse cx="105" cy="78" rx="3" ry="7" transform="rotate(-15 105 78)"/><ellipse cx="98" cy="91" rx="3" ry="7" transform="rotate(-35 98 91)"/>
+        <ellipse cx="95" cy="40" rx="2.5" ry="6" transform="rotate(-30 95 40)"/><ellipse cx="97" cy="57" rx="2.5" ry="6" transform="rotate(-25 97 57)"/>
+      </g>
+      <!-- espada -->
+      <path d="M60 4 L63 14 L63 112 L60 120 L57 112 L57 14 Z" fill="#555"/>
+      <rect x="52" y="104" width="16" height="3" fill="#333"/>
+      <!-- estrela -->
+      <path d="M60 10 L71 42 L105 42 L78 62 L88 95 L60 75 L32 95 L42 62 L15 42 L49 42 Z" fill="#e8e6e0" stroke="#222" stroke-width="2"/>
+      <path d="M60 18 L69 44 L96 44 L74 60 L82 86 L60 70 L38 86 L46 60 L24 44 L51 44 Z" fill="none" stroke="#444" stroke-width="1"/>
+      <circle cx="60" cy="56" r="17" fill="#3a3a3a" stroke="#222" stroke-width="1.5"/>
+      <circle cx="60" cy="56" r="12" fill="#1f1f1f"/>
+      <g fill="#ddd"><circle cx="60" cy="49" r="1.3"/><circle cx="54" cy="54" r="1.3"/><circle cx="66" cy="54" r="1.3"/><circle cx="57" cy="61" r="1.3"/><circle cx="63" cy="61" r="1.3"/><circle cx="60" cy="56" r="1"/></g>
+      <g fill="#bbb"><circle cx="60" cy="39" r=".9"/><circle cx="72" cy="45" r=".9"/><circle cx="76" cy="58" r=".9"/><circle cx="70" cy="70" r=".9"/><circle cx="50" cy="70" r=".9"/><circle cx="44" cy="58" r=".9"/><circle cx="48" cy="45" r=".9"/></g>
+      <!-- faixa -->
+      <path d="M18 104 Q60 118 102 104 L104 114 Q60 128 16 114 Z" fill="#e8e6e0" stroke="#222" stroke-width="1.2"/>
+      <path d="M28 112 Q60 121 92 112" stroke="#555" stroke-width="1" stroke-dasharray="2 1.5" fill="none"/>
+    </svg>
+    <div class="je">JUSTIÇA<br>ELEITORAL</div>
+  </div>
+
+  <div class="teclado" id="teclado">
+    <button class="acao branco" id="btBranco"><span class="rot">BRANCO</span><div class="br2"><i></i><i></i><i></i><i></i><i></i><i></i></div></button>
+    <button class="acao corrige" id="btCorrige"><span class="rot">CORRIGE</span><div class="br2"><i></i><i></i><i></i><i></i><i></i><i></i></div></button>
+    <button class="acao confirma" id="btConfirma"><span class="rot">CONFIRMA</span><div class="br2"><i></i><i></i><i></i><i></i><i></i><i></i></div></button>
+  </div>
+  </div>
+</div>
+<input type="file" accept="image/*" id="arquivo">
+
+<script>
+// ---------- Escala do palco ----------
+const palco = document.getElementById('palco');
+function ajustar() {
+  const s = Math.min(innerWidth / 1600, innerHeight / 780);
+  const h = Math.max(780, innerHeight / s); // tela mais alta: o gabinete estica
+  palco.style.height = h + 'px';
+  document.getElementById('conteudo').style.top = (h - 780) / 2 + 'px';
+  palco.style.transform = `translate(${(innerWidth - 1600 * s) / 2}px, 0) scale(${s})`;
+}
+addEventListener('resize', ajustar); ajustar();
+
+// ---------- Teclas numéricas (com braille) ----------
+const BRAILLE = { 1: [1], 2: [1, 2], 3: [1, 4], 4: [1, 4, 5], 5: [1, 5], 6: [1, 2, 4], 7: [1, 2, 4, 5], 8: [1, 2, 5], 9: [2, 4], 0: [2, 4, 5] };
+const ORDEM_GRADE = [1, 4, 2, 5, 3, 6]; // braille em 2 colunas, lido linha a linha
+const POS = { 1: [80, 50], 2: [197, 50], 3: [316, 50], 4: [80, 150], 5: [197, 150], 6: [316, 150], 7: [80, 255], 8: [197, 255], 9: [316, 255], 0: [197, 347] };
+const teclado = document.getElementById('teclado');
+for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
+  const b = document.createElement('button');
+  b.className = 'tecla'; b.dataset.n = n;
+  b.style.left = POS[n][0] + 'px'; b.style.top = POS[n][1] + 'px';
+  b.innerHTML = `<span class="n">${n}</span><span class="br">${ORDEM_GRADE.map(p => `<i class="${BRAILLE[n].includes(p) ? 'on' : ''}"></i>`).join('')}</span>`;
+  teclado.appendChild(b);
+}
+// respiros
+for (let i = 0; i < 10; i++) {
+  const v = document.createElement('div');
+  v.className = 'vent'; v.style.left = (87 + i * 153.5) + 'px';
+  palco.appendChild(v);
+}
+
+// ---------- Trocar foto (segurar 2s na foto, se um dia precisar) ----------
+const arquivo = document.getElementById('arquivo');
+let alvo = null;
+function carregarSalva(imgId, chave) { try { const u = localStorage.getItem(chave); if (u) document.getElementById(imgId).src = u; } catch (e) {} }
+carregarSalva('imgLula', 'urna_foto_lula'); carregarSalva('imgVice', 'urna_foto_vice');
+[['fotoPres', 'imgLula', 'urna_foto_lula'], ['fotoVice', 'imgVice', 'urna_foto_vice']].forEach(([box, imgId, chave]) => {
+  const el = document.getElementById(box); let t = null;
+  el.addEventListener('pointerdown', () => { t = setTimeout(() => { alvo = [imgId, chave]; arquivo.click(); }, 2000); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => el.addEventListener(ev, () => clearTimeout(t)));
+});
+arquivo.addEventListener('change', () => {
+  const f = arquivo.files[0]; if (!f || !alvo) return;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'), esc = Math.min(1, 500 / img.height);
+    c.width = img.width * esc; c.height = img.height * esc;
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const url = c.toDataURL('image/jpeg', 0.85);
+    try { localStorage.setItem(alvo[1], url); } catch (e) {}
+    document.getElementById(alvo[0]).src = url; arquivo.value = '';
+  };
+  img.src = URL.createObjectURL(f);
+});
+
+// ---------- Som (gerado na hora, funciona offline) ----------
+let ctx = null;
+function audio() {
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function bip(inicio, dur, freq = 1000, vol = 0.25) {
+  const a = audio(), o = a.createOscillator(), g = a.createGain();
+  o.type = 'square'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, a.currentTime + inicio);
+  g.gain.setValueAtTime(0, a.currentTime + inicio + dur);
+  o.connect(g).connect(a.destination);
+  o.start(a.currentTime + inicio); o.stop(a.currentTime + inicio + dur + 0.02);
+}
+// sons reais da urna (embutidos em base64); se não decodificar, cai nos bipes sintetizados
+const SONS = { tecla: { src: '__SOM_TECLA__', inicio: 0.05 }, confirma: { src: '__SOM_CONFIRMA__', inicio: 0.07 } };
+function carregarSons() {
+  for (const s of Object.values(SONS)) {
+    if (s.buf || s.carregando) continue;
+    s.carregando = true;
+    const bin = atob(s.src.split(',')[1]), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    audio().decodeAudioData(bytes.buffer, b => { s.buf = b; }, () => {});
+  }
+}
+function tocar(s) {
+  if (!s.buf) return false;
+  const a = audio(), n = a.createBufferSource();
+  n.buffer = s.buf; n.connect(a.destination); n.start(0, s.inicio);
+  return true;
+}
+try { carregarSons(); } catch (e) {} // decodifica já na abertura, pra 1ª tecla não sair com bipe
+
+const somTecla = () => { if (!tocar(SONS.tecla)) bip(0, 0.08, 1100); };
+function somConfirma() { if (!tocar(SONS.confirma)) { for (let i = 0; i < 5; i++) bip(i * 0.11, 0.07, 1050); bip(0.6, 0.45, 1050); } }
+
+// ---------- Lógica ----------
+const d = [document.getElementById('d0'), document.getElementById('d1')];
+const candidato = ['info', 'fotoPres', 'fotoVice', 'rodape'].map(id => document.getElementById(id));
+const fim = document.getElementById('fim');
+let numero = '', travado = false, mostrando = false;
+
+function atualizarPisca() { d.forEach((el, i) => el.classList.toggle('pisca', i === numero.length && numero.length < 2)); }
+
+function mostrarLula() {
+  // não importa o que digitou: vira 13
+  d[0].textContent = '1'; d[1].textContent = '3';
+  d.forEach(el => { el.classList.remove('pisca', 'glitch'); void el.offsetWidth; el.classList.add('glitch'); });
+  candidato.forEach(el => el.classList.remove('oculto'));
+  numero = '13'; mostrando = true;
+}
+
+function reiniciar() {
+  numero = ''; mostrando = false; travado = false;
+  d.forEach(el => { el.textContent = ''; el.classList.remove('glitch'); });
+  candidato.forEach(el => el.classList.add('oculto'));
+  fim.classList.add('some');
+  atualizarPisca();
+}
+
+function digitar(n) {
+  if (travado) return;
+  somTecla();
+  if (numero.length >= 2) return;
+  numero += n;
+  d[numero.length - 1].textContent = n;
+  atualizarPisca();
+  if (numero.length === 2) setTimeout(() => { if (!mostrando && numero.length === 2) mostrarLula(); }, 450);
+}
+
+function corrige() { if (travado) return; somTecla(); reiniciar(); }
+
+function confirma() {
+  if (travado) return;
+  travado = true;
+  const ja = mostrando;
+  if (!ja) { somTecla(); mostrarLula(); }
+  setTimeout(() => {
+    somConfirma();
+    fim.classList.remove('some');
+    setTimeout(reiniciar, 4000);
+  }, ja ? 0 : 1600);
+}
+
+function apertar(el, fn) { el.addEventListener('pointerdown', e => { e.preventDefault(); fn(); }); }
+document.querySelectorAll('.tecla').forEach(b => apertar(b, () => digitar(b.dataset.n)));
+apertar(document.getElementById('btCorrige'), corrige);
+apertar(document.getElementById('btConfirma'), confirma);
+// BRANCO também é Lula, claro
+apertar(document.getElementById('btBranco'), () => { if (travado) return; somTecla(); mostrarLula(); });
+
+// teclado físico (pra testar no PC)
+document.addEventListener('keydown', e => {
+  if (/^[0-9]$/.test(e.key)) digitar(e.key);
+  else if (e.key === 'Enter') confirma();
+  else if (e.key === 'Backspace' || e.key === 'Escape') corrige();
+});
+
+// tela cheia no primeiro toque
+document.addEventListener('pointerdown', () => {
+  const el = document.documentElement;
+  if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+}, { once: true });
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+atualizarPisca();
+
+// app instalável / offline (só funciona servido por https, não abrindo o arquivo direto)
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
